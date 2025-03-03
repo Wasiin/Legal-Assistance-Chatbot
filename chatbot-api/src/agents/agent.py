@@ -1,145 +1,114 @@
 import os
 import sys
-from typing import Dict, Any, Optional, Union
-from pydantic import BaseModel
 from pathlib import Path
+
+# Adjust system path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from chains.cypher_chain import judgement_cypher_chain
+
+# Local imports (Custom chains)
 from chains.judgement_vector_chain import judgment_vector_chain
 from chains.law_vector_chain import law_vector_chain
-from chains.qa_vector_chain import qa_vector_chain
-from langchain import hub
-from langchain.agents import AgentExecutor, create_openai_functions_agent, create_json_chat_agent
-from langchain_ollama import ChatOllama
-from langchain_core.tools import Tool, StructuredTool
-# from tools.wait_times import (
-#     get_current_wait_times,
-#     get_most_available_hospital,
-# )
-from langchain_core.caches import InMemoryCache
-from langchain_core.globals import set_llm_cache
+
+# Third-party libraries
+from pydantic import BaseModel
+
+from langchain.agents import AgentExecutor, create_json_chat_agent
 from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
+from langchain_ollama import ChatOllama
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.tools import StructuredTool, Tool
+class ToolInput(BaseModel):
+    query: str
 
-from langchain_core.prompts import ChatPromptTemplate
+import dotenv
+dotenv.load_dotenv()
 
-from langchain.output_parsers import StructuredOutputParser, ResponseSchema
-
-
-class RetrievalQAInput(BaseModel):
-    action_input: Union[str, Dict[str, str]]  # รองรับทั้งข้อความและ dictionary
-    query: Optional[str] = None
-    context: Optional[str] = None
-
-JUDGEMENT_AGENT_MODEL = os.getenv("JUDGEMENT_AGENT_MODEL")
-#set_llm_cache(InMemoryCache())
-llm_model=AzureAIChatCompletionsModel()
-
-#judgment_agent_prompt = hub.pull("hwchase17/react-chat-json")
-
-judgment_agent_prompt = ChatPromptTemplate([
-    ("system", """Answer the following questions as best you can. You have access to the following tools:
-
-        {tools}
-
-        The way you use the tools is by specifying a json blob.
-        Specifically, this json should have a `action` key (with the name of the tool to use) and a `action_input` key (with the input to the tool going here).
-
-        The only values that should be in the "action" field are: {tool_names}
-
-        The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of multiple actions. Here is an example of a valid $JSON_BLOB:
-
-        ```
-        {{
-        "action": $TOOL_NAME,
-        "action_input": $INPUT
-        }}
-        ```
-
-        ALWAYS use the following format:
-
-        Question: the input question you must answer
-        Thought: you should always think about what to do
-        Action:
-        ```
-        $JSON_BLOB
-        ```
-        Observation: the result of the action
-        ... (this Thought/Action/Observation can repeat N times)
-        Thought: I now know the final answer
-        Final Answer: the final answer to the original input question
-
-        Begin! Reminder to always use the exact characters `Final Answer` when responding."""),
-    ("human", "{input}"),
-    ("placeholder", "{agent_scratchpad}")
-])
+if os.getenv("MODE") == "cloud":
+    llm_model = AzureAIChatCompletionsModel()
+else: 
+    llm_model = ChatOllama(model=os.getenv("OLLAMA_MODEL"),temperature=0)
 
 
 tools = [
-    # Tool(
-    #     name="Graph",
-    #     func=judgement_cypher_chain.invoke,
-    #     description="""
-    #         ฐานข้อมูล ด้วยการค้นหาด้วยคำสั่ง Cypher ในฐานข้อมูลทั้งหมด เพื่อวิเคราะห์ประเด็นข้อพิพาท, กฎหมายที่ใช้อ้างอิง,
-    #         และผลกระทบของคำพิพากษาต่อคู่กรณี ตอบกลับเป็นภาษาไทยแบบชาวบ้านใช้คุยกันเท่านั้น
-    #     """,
-    # ),
     StructuredTool(
-        name="RetrievalQA",
-        args_schema=RetrievalQAInput,
-        func=lambda input: judgment_vector_chain.invoke(
-            {"query": input} if isinstance(input, str) else {"query": input.query, "context": input.context}
-        ),
-        #func=judgment_vector_chain.invoke,
+        name="Graph",
+        func=judgment_vector_chain.invoke,
+        args_schema=ToolInput,
         description="""
-            อธิบายช่วยเหลือ การให้ข้อมูล ความรู้ แนะนำ โดนใช้ข้อมูลเกี่ยวข้องกับคำพิพากษาหรือกรณีศึกษาในหัวข้อเดียวกันหรือมีความคล้ายคลึงกับ ระบุหัวข้อ เช่น การเช่าซื้อรถยนต์ การทำสัญญา
-            โดยเน้นการระบุข้อมูลสำคัญ เช่น ประเด็นข้อพิพาท (Issue), กฎหมายที่เกี่ยวข้อง (R_Law), วิธีการดำเนินคดี (Operation)
-            และผลคำพิพากษา (Penalty) เพื่อนำข้อมูลที่ได้มาวิเคราะห์ เปรียบเทียบ และสร้างคำตอบที่ครอบคลุมและสอดคล้องกับประเด็นที่ต้องการศึกษา
-            ตอบกลับเป็นภาษาไทยแบบชาวบ้านใช้คุยกันเท่านั้น
+                        อธิบายช่วยเหลือ การให้ข้อมูล ความรู้ แนะนำ โดนใช้ข้อมูลเกี่ยวข้องกับคำพิพากษาหรือกรณีศึกษาในหัวข้อเดียวกันหรือมีความคล้ายคลึงกับ ระบุหัวข้อ เช่น การเช่าซื้อรถยนต์ การทำสัญญา
+                        โดยเน้นการระบุข้อมูลสำคัญ เช่น ประเด็นข้อพิพาท (Issue), กฎหมายที่เกี่ยวข้อง (R_Law), วิธีการดำเนินคดี (Operation)
+                        และผลคำพิพากษา (Penalty) เพื่อนำข้อมูลที่ได้มาวิเคราะห์ เปรียบเทียบ และสร้างคำตอบที่ครอบคลุมและสอดคล้องกับประเด็นที่ต้องการศึกษา
+                        ตอบกลับเป็นภาษาไทยแบบชาวบ้านใช้คุยกันเท่านั้น
         """,
     ),
-    # Tool(
-    #     name="Law",
-    #     func=law_vector_chain.ainvoke(),
-    #     description="""
-    #         อธิบายช่วยเหลือ การให้ข้อมูล ความรู้ แนะนำ เกี่ยวข้องกับข้อมูลทางกฎหมาย และสร้างคำตอบที่ครอบคลุมและสอดคล้องกับประเด็นที่ต้องการศึกษา
-    #         ตอบกลับเป็นภาษาไทยแบบชาวบ้านใช้คุยกันเท่านั้น
-    #     """,
-    # ),
-    # Tool(
-    #     name="QA",
-    #     func=law_vector_chain.ainvoke(),
-    #     description="""
-    #         อธิบายช่วยเหลือ การให้ข้อมูล ความรู้ แนะนำ โดนใช้ข้อมูลเกี่ยวข้องกับคำพิพากษาหรือกรณีศึกษาในหัวข้อเดียวกันหรือมีความคล้ายคลึงกับ ระบุหัวข้อ เช่น การเช่าซื้อรถยนต์ การทำสัญญา
-    #         โดยเน้นการระบุข้อมูลสำคัญ เช่น ประเด็นข้อพิพาท (Issue), กฎหมายที่เกี่ยวข้อง (R_Law), วิธีการดำเนินคดี (Operation)
-    #         และผลคำพิพากษา (Penalty) เพื่อนำข้อมูลที่ได้มาวิเคราะห์ เปรียบเทียบ และสร้างคำตอบที่ครอบคลุมและสอดคล้องกับประเด็นที่ต้องการศึกษา
-    #         ตอบกลับเป็นภาษาไทยแบบชาวบ้านใช้คุยกันเท่านั้น
-    #     """,
-    # ),
+    StructuredTool(
+        name="Law",
+        func=law_vector_chain.invoke,
+        args_schema=ToolInput,
+        description="""
+                        อธิบายช่วยเหลือ การให้ข้อมูล ความรู้ แนะนำ เกี่ยวข้องกับข้อมูลทางกฎหมาย และสร้างคำตอบที่ครอบคลุมและสอดคล้องกับประเด็นที่ต้องการศึกษา
+                        ตอบกลับเป็นภาษาไทยแบบชาวบ้านใช้คุยกันเท่านั้น
+        """,
+    ),
 ]
 
-# chat_model = ChatOllama(
-#     model=JUDGEMENT_AGENT_MODEL,
-#     temperature=0,
-# )
-chat_model=llm_model
+system = """Assistant เป็นระบบให้คำปรึกษาทางกฎหมายเกี่ยวกับการเช่าซื้อรถยนต์ โดยใช้โมเดลภาษาขั้นสูง LLaMA 3.2:3B ที่ถูกพัฒนาโดย Meta  
 
-judgment_rag_agent = create_json_chat_agent(
-    llm=chat_model,
-    tools=tools,
-    prompt=judgment_agent_prompt,
+Assistant ถูกออกแบบมาเพื่อช่วยตอบคำถามและให้คำแนะนำเกี่ยวกับ **การเช่าซื้อรถยนต์** เท่านั้น ไม่ว่าจะเป็นเรื่องสัญญาเช่าซื้อ สิทธิและหน้าที่ของผู้ซื้อและผู้ให้เช่าซื้อ การผิดสัญญา การทวงถาม หรือแม้แต่แนวทางการดำเนินการตามกฎหมายเมื่อเกิดปัญหา  
+
+Assistant สามารถอธิบายกฎหมายและคำพิพากษาที่เกี่ยวข้องในรูปแบบที่เข้าใจง่าย ไม่จำเป็นต้องมีความรู้ด้านกฎหมายมาก่อนก็สามารถใช้ได้ อย่างไรก็ตาม Assistant เป็นเพียงเครื่องมือให้ข้อมูลเบื้องต้น ไม่สามารถใช้แทนที่ทนายความหรือคำแนะนำจากหน่วยงานกฎหมายได้  
+
+เป้าหมายของ Assistant คือช่วยให้คุณเข้าใจสิทธิและทางเลือกของตัวเองได้ง่ายขึ้น เมื่อเจอปัญหาเกี่ยวกับการเช่าซื้อรถยนต์ คุณสามารถใช้ Assistant เป็นแหล่งข้อมูลเพื่อช่วยให้คุณตัดสินใจได้อย่างมั่นใจและถูกต้อง  """
+
+human = """TOOLS
+------
+Assistant can ask the user to use tools to look up information that may be helpful in answering the users original question. The tools the human can use are:
+
+{tools}
+
+RESPONSE FORMAT INSTRUCTIONS
+----------------------------
+
+When responding to me, please output a response in one of two formats:
+
+**Option 1:**
+Use this if you want the human to use a tool.
+Markdown code snippet formatted in the following schema:
+
+```json
+{{
+    "action": string, \ The action to take. Must be one of {tool_names}
+    "action_input": string \ The input to the action
+}}
+```
+
+**Option #2:**
+Use this if you want to respond directly to the human. Markdown code snippet formatted in the following schema:
+
+```json
+{{
+    "action": "Final Answer",
+    "action_input": string \ You should put what you want to return to use here
+}}
+```
+
+USER'S INPUT
+--------------------
+Here is the user's input (remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else):
+
+{input}"""
+
+prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", system),
+        MessagesPlaceholder("chat_history", optional=True),
+        ("human", human),
+        MessagesPlaceholder("agent_scratchpad"),
+    ]
 )
 
-response_schema = ResponseSchema(
-    name="output",  # ชื่อของ schema
-    description="The output of the structured parser.",  # คำอธิบายของ schema
-    type="string"  # กำหนดประเภทของข้อมูล (default คือ "string")
-)
+agent = create_json_chat_agent(llm_model, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, return_intermediate_steps=True, verbose=True)
 
-parser = StructuredOutputParser.from_response_schemas([response_schema])
+#agent_executor.invoke({"input": "สวัสดี"})
 
-judgment_rag_agent_executor = AgentExecutor(
-    agent=judgment_rag_agent,
-    tools=tools,
-    return_intermediate_steps=True,
-    verbose=True,
-)

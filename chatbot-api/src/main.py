@@ -1,13 +1,15 @@
 import os
-# import sys
-# sys.path.append(os.path.join(os.path.dirname( __file__ ),'..'))
-from dotenv import load_dotenv
-load_dotenv()
-import uvicorn # type: ignore
+
+# Load environment variables
+from dotenv import load_dotenv; load_dotenv()
+
+# Third-party libraries
 import httpx
-from dotenv import load_dotenv
-from fastapi import FastAPI, Request, HTTPException # type: ignore
+import uvicorn  # type: ignore
+from fastapi import FastAPI, HTTPException, Request  # type: ignore
 from pydantic import BaseModel
+
+# Local imports
 from models.model import ReceiveLine
 
 

@@ -1,27 +1,22 @@
 import os
-from langchain_neo4j import Neo4jVector
+
+from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
-from langchain.chains import RetrievalQA
+from langchain_neo4j import Neo4jVector
 from langchain_ollama import ChatOllama
+
+from langchain.chains import RetrievalQA
 from langchain_core.prompts import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
     PromptTemplate,
     SystemMessagePromptTemplate,
-    HumanMessagePromptTemplate,
-    ChatPromptTemplate,
 )
-from langchain_core.caches import InMemoryCache
-from langchain_core.globals import set_llm_cache
-from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
 
-
-
-
-JUDGEMENT_QA_MODEL = os.getenv("JUDGEMENT_QA_MODEL")
-#set_llm_cache(InMemoryCache())
-#if os.getenv("mode") == "prod"
-
-#llm_model=ChatOllama(model=JUDGEMENT_QA_MODEL, temperature=0,)
-llm_model=AzureAIChatCompletionsModel()
+if os.getenv("MODE") == "cloud":
+    llm_model = AzureAIChatCompletionsModel()
+else: 
+    llm_model = ChatOllama(model=os.getenv("OLLAMA_MODEL"),temperature=0)
 
 neo4j_vector_index = Neo4jVector.from_existing_graph(
     embedding=HuggingFaceEmbeddings(
