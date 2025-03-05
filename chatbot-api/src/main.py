@@ -55,9 +55,9 @@ async def query(line: ReceiveLine): #(query_input: JudgmentQueryInput) -> Judgme
     #print(line)
     # print(line.events[0].replyToken)
     #print(type(line.events[0].message.text))
-    from agents.agent import judgment_rag_agent_executor
+    from agents.agent import agent_executor
     try:
-        chat = await judgment_rag_agent_executor.ainvoke({"input": line.events[0].message.text})
+        chat = await agent_executor.ainvoke({"input": line.events[0].message.text})
         chat["intermediate_steps"] = [
             str(s) for s in chat["intermediate_steps"]
         ]

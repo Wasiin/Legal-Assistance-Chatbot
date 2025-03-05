@@ -3,7 +3,8 @@ ENV PYTHONUNBUFFERED 1
 RUN mkdir /bot-server
 WORKDIR /bot-server
 COPY pyproject.toml /bot-server/
-RUN pip install -r pyproject.toml
+RUN pipx install poetry
 RUN pip install gunicorn
+RUN poetry install
 COPY . /bot-server/
 WORKDIR /bot-server/src
