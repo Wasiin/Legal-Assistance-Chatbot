@@ -25,7 +25,7 @@ neo4j_vector_index = Neo4jVector.from_existing_graph(
     embedding=HuggingFaceEmbeddings(
         model_name="BAAI/bge-m3",
         cache_folder=os.path.join(os.path.dirname(__file__),"embedding_model"),
-        model_kwargs={'device': 'mps'}
+        #model_kwargs={'device': 'mps'}
     ),
     url=os.getenv("NEO4J_URI"),
     username=os.getenv("NEO4J_USERNAME"),
@@ -63,7 +63,7 @@ law_prompt = ChatPromptTemplate(
 law_vector_chain = RetrievalQA.from_chain_type(
     llm=llm_model,
     chain_type="stuff",
-    retriever=neo4j_vector_index.as_retriever(search_type="similarity", search_kwargs={"k":20}),
+    retriever=neo4j_vector_index.as_retriever(search_type="similarity", search_kwargs={"k":3}),
     verbose=True,
 )
 law_vector_chain.combine_documents_chain.llm_chain.prompt = law_prompt
