@@ -32,7 +32,7 @@ async def chat():
 
 @app.post("/test")
 async def test(request: Request):
-    from agents.agent2 import agent_executor
+    from agents.agent import agent_executor
     # query_res = await judgment_rag_agent_executor.ainvoke({"input": "สวัสดี"})
     # query_res["intermediate_steps"] = [
     #     str(s) for s in query_res["intermediate_steps"]

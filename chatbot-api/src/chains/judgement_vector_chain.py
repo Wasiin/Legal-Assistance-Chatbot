@@ -17,9 +17,9 @@ import dotenv
 dotenv.load_dotenv()
 
 if os.getenv("MODE") == "cloud":
-    llm_model = AzureAIChatCompletionsModel()
+    llm_model = AzureAIChatCompletionsModel(temperature=0.2)
 else: 
-    llm_model = ChatOllama(model=os.getenv("OLLAMA_MODEL"),temperature=0)
+    llm_model = ChatOllama(model=os.getenv("OLLAMA_MODEL"),temperature=0.2)
 
 neo4j_vector_index = Neo4jVector.from_existing_graph(
     embedding=HuggingFaceEmbeddings(
