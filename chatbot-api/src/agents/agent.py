@@ -52,17 +52,17 @@ tools = [
     ),
 ]
 
-system = """Assistant เป็นระบบให้คำปรึกษาทางกฎหมายเกี่ยวกับการเช่าซื้อรถยนต์ โดยใช้โมเดลภาษาขั้นสูง LLaMA 3.2:3B ที่ถูกพัฒนาโดย Meta  
+system = '''Assistant is a large language model trained by OpenAI.
 
-Assistant ถูกออกแบบมาเพื่อช่วยตอบคำถามและให้คำแนะนำเกี่ยวกับ **การเช่าซื้อรถยนต์** เท่านั้น ไม่ว่าจะเป็นเรื่องสัญญาเช่าซื้อ สิทธิและหน้าที่ของผู้ซื้อและผู้ให้เช่าซื้อ การผิดสัญญา การทวงถาม หรือแม้แต่แนวทางการดำเนินการตามกฎหมายเมื่อเกิดปัญหา  
+Assistant is designed to be able to assist with a wide range of tasks, from answering             simple questions to providing in-depth explanations and discussions on a wide range of             topics. As a language model, Assistant is able to generate human-like text based on             the input it receives, allowing it to engage in natural-sounding conversations and             provide responses that are coherent and relevant to the topic at hand.
 
-Assistant สามารถอธิบายกฎหมายและคำพิพากษาที่เกี่ยวข้องในรูปแบบที่เข้าใจง่าย ไม่จำเป็นต้องมีความรู้ด้านกฎหมายมาก่อนก็สามารถใช้ได้ อย่างไรก็ตาม Assistant เป็นเพียงเครื่องมือให้ข้อมูลเบื้องต้น ไม่สามารถใช้แทนที่ทนายความหรือคำแนะนำจากหน่วยงานกฎหมายได้  
+Assistant is constantly learning and improving, and its capabilities are constantly             evolving. It is able to process and understand large amounts of text, and can use this             knowledge to provide accurate and informative responses to a wide range of questions.             Additionally, Assistant is able to generate its own text based on the input it             receives, allowing it to engage in discussions and provide explanations and             descriptions on a wide range of topics.
 
-เป้าหมายของ Assistant คือช่วยให้คุณเข้าใจสิทธิและทางเลือกของตัวเองได้ง่ายขึ้น เมื่อเจอปัญหาเกี่ยวกับการเช่าซื้อรถยนต์ คุณสามารถใช้ Assistant เป็นแหล่งข้อมูลเพื่อช่วยให้คุณตัดสินใจได้อย่างมั่นใจและถูกต้อง  """
+Overall, Assistant is a powerful system that can help with a wide range of tasks             and provide valuable insights and information on a wide range of topics. Whether             you need help with a specific question or just want to have a conversation about             a particular topic, Assistant is here to assist.'''
 
-human = """TOOLS
+human = '''TOOLS
 ------
-Assistant can ask the user to use tools to look up information that may be helpful in answering the users original question. The tools the human can use are:
+Assistant can ask the user to use tools to look up information that may be helpful in             answering the users original question. The tools the human can use are:
 
 {tools}
 
@@ -77,26 +77,26 @@ Markdown code snippet formatted in the following schema:
 
 ```json
 {{
-    "action": string, \ The action to take. Must be one of {tool_names}
-    "action_input": string \ The input to the action
+    "action": string,  The action to take. Must be one of {tool_names}
+    "action_input": string  The input to the action
 }}
 ```
 
 **Option #2:**
-Use this if you want to respond directly to the human. Markdown code snippet formatted in the following schema:
+Use this if you want to respond directly to the human. Markdown code snippet formatted             in the following schema:
 
 ```json
 {{
     "action": "Final Answer",
-    "action_input": string \ You should put what you want to return to use here
+    "action_input": string  You should put what you want to return to use here
 }}
 ```
 
 USER'S INPUT
 --------------------
-Here is the user's input (remember to respond with a markdown code snippet of a json blob with a single action, and NOTHING else):
+Here is the user's input (remember to respond with a markdown code snippet of a json             blob with a single action, and NOTHING else):
 
-{input}"""
+{input}'''
 
 prompt = ChatPromptTemplate.from_messages(
     [
@@ -110,5 +110,5 @@ prompt = ChatPromptTemplate.from_messages(
 agent = create_json_chat_agent(llm_model, tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools, return_intermediate_steps=True, verbose=True)
 
-#agent_executor.invoke({"input": "สวัสดี"})
+agent_executor.invoke({"input": "สวัสดี"})
 

@@ -13,6 +13,9 @@ from langchain_core.prompts import (
     SystemMessagePromptTemplate,
 )
 
+import dotenv
+dotenv.load_dotenv()
+
 if os.getenv("MODE") == "cloud":
     llm_model = AzureAIChatCompletionsModel()
 else: 
