@@ -34,7 +34,7 @@ services:
     ports:
       - 8000:8000
     env_file: ".env"
-    command: gunicorn --bind=0.0.0.0 -w 4 -k uvicorn.workers.UvicornH11Worker main:app\
+    command: gunicorn --bind=0.0.0.0 -w 4 -k uvicorn.workers.UvicornH11Worker main:app
     depends_on:
       - neo4j
 
