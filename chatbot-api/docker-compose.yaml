@@ -4,8 +4,8 @@ services:
     container_name: neo4j-admin
     restart: "no"
     volumes:
-      - $Home/neo4j/data:/data
-      - $Home/neo4j/backups:/backups
+      - ${HOME}/neo4j/data:/data
+      - ${HOME}/neo4j/backups:/backups
     entrypoint: >
       /bin/sh -c "
       if [ ! -f /data/.db_loaded ]; then
@@ -23,7 +23,7 @@ services:
       - NEO4J_AUTH=$NEO4J_USERNAME/$NEO4J_PASSWORD
       - NEO4J_ACCEPT_LICENSE_AGREEMENT=eval
     volumes:
-      - $Home/neo4j/data:/data
+      - ${HOME}/neo4j/data:/data
     depends_on:
       - neo4j-admin
 
