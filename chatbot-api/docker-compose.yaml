@@ -1,0 +1,48 @@
+services:
+  neo4j-admin:
+    image: neo4j/neo4j-admin:5.25.1-enterprise-debian
+    container_name: neo4j-admin
+    restart: "no"
+    volumes:
+      - ./neo4j/data:/data
+      - ./neo4j/backups:/backups
+    entrypoint: >
+      /bin/sh -c "
+      if [ ! -f /data/.db_loaded ]; then
+        neo4j-admin database load neo4j --from-path=/backups --overwrite-destination=true --verbose && touch /data/.db_loaded;
+      fi"
+  neo4j:
+    image: neo4j:5.25.1-enterprise
+    container_name: neo4j
+    restart: always
+    env_file: ".env"
+    ports:
+      - 7474:7474
+      - 7687:7687
+    environment:
+      - NEO4J_AUTH=$NEO4J_USERNAME/$NEO4J_PASSWORD
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=eval
+    volumes:
+      - ./neo4j/data:/data
+    depends_on:
+      - neo4j-admin
+
+  bot-server:
+    build: .
+    container_name: bot-server
+    restart: always
+    port:
+      - 8000:8000
+    env_file: ".env"
+    command: gunicorn --bind=0.0.0.0 -w 4 -k uvicorn.workers.UvicornH11Worker main:app
+
+  cf-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cf-tunnel
+    restart: always
+    env_file: ".env"
+    entrypoint: > 
+      /bin/sh -c "if [ -z \"$CLOUDFLARE_TUNNEL_TOKEN\" ]; then
+        echo 'CLOUDFLARE_TUNNEL_TOKEN is missing'; exit 1; 
+      fi
+      && tunnel --no-autoupdate run --protocol http2 --token $CLOUDFLARE_TUNNEL_TOKEN"
