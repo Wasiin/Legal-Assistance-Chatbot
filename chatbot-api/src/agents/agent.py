@@ -45,8 +45,7 @@ tools = [
         func=law_vector_chain.invoke,
         args_schema=ToolInput,
         description="""
-                        อธิบายช่วยเหลือ การให้ข้อมูล ความรู้ แนะนำ เกี่ยวข้องกับข้อมูลทางกฎหมาย และสร้างคำตอบที่ครอบคลุมและสอดคล้องกับประเด็นที่ต้องการศึกษา
-                        ตอบกลับเป็นภาษาไทยแบบชาวบ้านใช้คุยกันเท่านั้น
+                        อธิบายช่วยเหลือ การให้ข้อมูล ความรู้ แนะนำ เกี่ยวข้องกับข้อมูลทางกฎหมาย แล้วเรียบเรียงข้อมูลให้ออกมาเป็น string เท่านั้น เช่น "กฎหมายแพ่งและพาณิช มาตรา 386" หรือ การค้นหาอื่นๆที่เกี่ยวข้องกับข้อกฎหมาย  และสร้างคำตอบที่ครอบคลุมและสอดคล้องกับประเด็นที่ต้องการศึกษา ตอบกลับเป็นภาษาไทยแบบชาวบ้านใช้คุยกันเท่านั้น
         """,
     ),
 ]
@@ -77,7 +76,7 @@ Markdown code snippet formatted in the following schema:
 ```json
 {{
     "action": string, \ The action to take. Must be one of {tool_names}
-    "action_input": string \ The input to the action
+    "action_input": string \ The input to the action is in a single string format only
 }}
 ```
 
